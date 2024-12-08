@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "next build",
   "builds": [
     {
       "src": "package.json",
@@ -32,5 +33,6 @@
         }
       ]
     }
-  ]
+  ],
+  "regions": ["iad1"]
 }
