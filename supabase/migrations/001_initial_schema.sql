@@ -23,6 +23,35 @@ create policy "Users can update own profile."
   on profiles for update
   using ( auth.uid() = id );
 
+-- Create language table
+create table if not exists public.language (
+  id uuid default uuid_generate_v4() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  user_id uuid references auth.users not null,
+  lang text not null,
+  name text not null,
+  unique(user_id, lang)
+);
+
+-- Set up RLS for language
+alter table public.language enable row level security;
+
+create policy "Users can view own languages"
+  on language for select
+  using ( auth.uid() = user_id );
+
+create policy "Users can create own languages"
+  on language for insert
+  with check ( auth.uid() = user_id );
+
+create policy "Users can update own languages"
+  on language for update
+  using ( auth.uid() = user_id );
+
+create policy "Users can delete own languages"
+  on language for delete
+  using ( auth.uid() = user_id );
+
 -- Create vocabulary documents table
 create table if not exists public.vocabulary_docs (
   id uuid default uuid_generate_v4() primary key,

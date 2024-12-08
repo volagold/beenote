@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import getclient from "@utils/pb-client";
+import { getClient } from "@/lib/supabase-client";
 import toast from "react-hot-toast";
 import LangIcon from "@utils/LangIcon";
 
@@ -60,29 +60,39 @@ const capitalize = (s: string) => {
 export default function CreateLanguage({ created }: { created: string[] }) {
   const new_list = languages.filter((item) => !created.includes(item));
   const [lang, setLang] = useState("");
+  const router = useRouter();
+  const supabase = getClient();
+
   const handleClick = (item: string) => {
     setLang(item);
   };
-  const router = useRouter();
+
   const create = async () => {
-    if (lang == "") {
+    if (lang === "") {
       toast.error("Please select a language");
-      return undefined;
+      return;
     }
-    const client = getclient();
-    const userId = client.authStore.model.id;
-    const res = await client.collection("language").create({
-      userId: userId,
-      lang: lang,
-      name: capitalize(lang),
-    });
 
-    router.refresh();
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-    if (!res.code) {
-      toast.success("Created");
-    } else {
-      toast.error("Failed.");
+      // Create language
+      const { error: insertError } = await supabase
+        .from('language')
+        .insert({
+          user_id: user.id,
+          lang: lang,
+          name: capitalize(lang)
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success("Created successfully");
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create language");
     }
   };
 
@@ -106,7 +116,7 @@ export default function CreateLanguage({ created }: { created: string[] }) {
               key={item}
               onClick={() => handleClick(item)}
               className={`flex flex-row items-center gap-5 p-2 rounded-md cursor-pointer hover:bg-primary ${
-                item == lang ? "bg-primary" : ""
+                item === lang ? "bg-primary" : ""
               }`}
             >
               <LangIcon lang={item} size={50} />
