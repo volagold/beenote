@@ -8,7 +8,7 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -20,22 +20,16 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@utils/*": [
-        "./app/(utils)/*"
-      ],
-      "@public/*": [
-        "./public/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
-      ]
+      "@/*": ["./*"],
+      "@utils/*": ["./app/(utils)/*"],
+      "@public/*": ["./public/*"],
+      "@lib/*": ["./lib/*"]
     },
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "strictNullChecks": false
+    ]
   },
   "include": [
     "next-env.d.ts",
