@@ -1,21 +1,46 @@
 'use client';
-import 'remixicon/fonts/remixicon.css'
-import Link from 'next/link'
 
-export default function Error() {
-    return (
-        <div className='py-20 ml-20 text-left'>
-            <h2 className='text-4xl font-bold mb-10' >An error happened when you visit this page.</h2>
-            
-            <p className='text-3xl mb-10'>
-                If you have not logged in, <Link href="/login" className='text-primary underline'>Log in here</Link>.
-            </p>
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-            <Link href="/">
-                <button className='btn btn-outline btn-ghost capitalize gap-2'>
-                <i className="ri-arrow-left-s-line"></i> Return to Homepage
-                </button>
-            </Link>
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Log the error
+    console.error('Error:', error);
+
+    // If it's an auth error, redirect to login
+    if (error.message?.includes('auth') || error.message?.includes('session')) {
+      router.push('/login');
+    }
+  }, [error, router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+        <div className="flex gap-4 justify-center">
+          <button
+            className="btn btn-primary"
+            onClick={() => reset()}
+          >
+            Try again
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => router.push('/')}
+          >
+            Return Home
+          </button>
         </div>
-    )
+      </div>
+    </div>
+  );
 }

@@ -3,6 +3,7 @@ import ThemeProvider from '@utils/Theme'
 import Toast from '@utils/Toaster'
 import { AnalyticsWrapper } from '@utils/analytics';
 import type { Metadata, Viewport } from 'next'
+import { AuthProvider } from './providers';
 
 export const metadata: Metadata = {
   title: 'BeeNote',
@@ -21,11 +22,13 @@ export default function RootLayout({children}:{children: React.ReactNode}) {
   return (
     <html lang="en" data-theme="bumblebee">
       <body>
-        <ThemeProvider>
-          <Toast/>
-          {children}
-          <AnalyticsWrapper />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <Toast/>
+            {children}
+            <AnalyticsWrapper />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )
