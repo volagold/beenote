@@ -13,8 +13,15 @@ export default async function Home() {
   try {
     // Get current session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
+    console.log('U page session check:', { hasSession: !!session, error: sessionError });
+
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      throw sessionError;
+    }
+
     if (!session) {
+      console.log('No session in /u page, redirecting to login');
       redirect('/login');
     }
 
@@ -25,7 +32,17 @@ export default async function Home() {
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: true });
 
-    if (langError) throw langError;
+    console.log('Languages query:', { 
+      userId: session.user.id,
+      hasLanguages: !!languages,
+      languageCount: languages?.length,
+      error: langError 
+    });
+
+    if (langError) {
+      console.error('Language query error:', langError);
+      throw langError;
+    }
 
     const langlist = languages?.map((item) => item.lang) || [];
 
@@ -56,7 +73,7 @@ export default async function Home() {
       </>
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in /u page:', error);
     redirect('/login');
   }
 }

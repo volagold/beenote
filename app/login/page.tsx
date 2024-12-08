@@ -1,5 +1,5 @@
 'use client';
-import { getClient } from '@/lib/supabase-client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@utils/Logo';
@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 export default function LogIn() {
   const router = useRouter();
-  const supabase = getClient();
+  const supabase = createClientComponentClient();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,15 +21,29 @@ export default function LogIn() {
         password
       });
 
-      if (error) throw error;
+      console.log('Sign in response:', { authData, error }); // Debug log
 
-      // Redirect only if we have a session
+      if (error) {
+        console.error('Sign in error:', error); // Debug log
+        throw error;
+      }
+
       if (authData?.session) {
+        console.log('Session obtained:', authData.session); // Debug log
+        
+        // Set cookie
+        await supabase.auth.getSession();
+        
+        toast.success('Signed in successfully');
         router.push('/u');
-        router.refresh(); // Refresh to update auth state across the app
+        router.refresh();
+      } else {
+        console.error('No session in response'); // Debug log
+        toast.error('Failed to sign in');
       }
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Sign in catch block:', error); // Debug log
+      toast.error(error.message || 'Failed to sign in');
     }
   };
 

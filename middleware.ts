@@ -7,12 +7,18 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res });
 
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // Refresh session if needed
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    console.log('Middleware session check:', {
+      path: req.nextUrl.pathname,
+      hasSession: !!session,
+      error: sessionError
+    });
 
     // If there's no session and the user is trying to access a protected route
     if (!session && req.nextUrl.pathname.startsWith('/u')) {
+      console.log('No session, redirecting to login');
       const redirectUrl = req.nextUrl.clone();
       redirectUrl.pathname = '/login';
       redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
@@ -25,6 +31,7 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.pathname === '/signup' ||
       req.nextUrl.pathname === '/reset'
     )) {
+      console.log('Session exists, redirecting to /u');
       const redirectUrl = req.nextUrl.clone();
       redirectUrl.pathname = '/u';
       return NextResponse.redirect(redirectUrl);
@@ -32,6 +39,8 @@ export async function middleware(req: NextRequest) {
 
     return res;
   } catch (error) {
+    console.error('Middleware error:', error);
+    
     // If there's an error getting the session, redirect to login
     if (req.nextUrl.pathname.startsWith('/u')) {
       const redirectUrl = req.nextUrl.clone();
