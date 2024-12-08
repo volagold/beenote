@@ -1,45 +1,59 @@
-@keyframes transition1 {
-  from {
+.hero {
+  position: relative;
+  background-image: url("/bg1.jpg");
+  background-size: cover;
+  background-position: center;
+  transition: background-image 1s ease-in-out;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Preload background images */
+@media (min-width: 1px) {
+  body::after {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    z-index: -1;
+    content: url("/bg1.jpg") url("/bg2.jpg") url("/bg3.jpg") url("/bg4.jpg");
+  }
+}
+
+/* Background image animation */
+@keyframes bgAnimation {
+  0% {
     background-image: url("/bg1.jpg");
   }
-  to {
+  25% {
     background-image: url("/bg2.jpg");
   }
-}
-
-@keyframes transition2 {
-  from {
-    background-image: url("/bg2.jpg");
-  }
-  to {
+  50% {
     background-image: url("/bg3.jpg");
   }
-}
-
-@keyframes transition3 {
-  from {
-    background-image: url("/bg3.jpg");
-  }
-  to {
+  75% {
     background-image: url("/bg4.jpg");
   }
-}
-
-@keyframes transition4 {
-  from {
-    background-image: url("/bg4.jpg");
-  }
-  to {
+  100% {
     background-image: url("/bg1.jpg");
   }
 }
-
 
 .hero {
-  background-image: url("/bg1.jpg");
-  animation-name: transition1, transition2, transition3, transition4;
-  animation-duration: 1s, 1s, 1s, 1s;
-  animation-delay: 2s, 6s, 11s, 16s;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
- }
+  animation: bgAnimation 20s infinite;
+  animation-timing-function: ease-in-out;
+}
