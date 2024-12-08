@@ -1,15 +1,24 @@
 'use client';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@utils/Logo';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function LogIn() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for error parameter
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast.error(decodeURIComponent(error));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -20,32 +29,34 @@ export default function LogIn() {
       const email = formData.get('email')?.toString() || '';
       const password = formData.get('password')?.toString() || '';
 
-      console.log('Attempting login with:', { email }); // Debug log
+      console.log('Login attempt:', { email, timestamp: new Date().toISOString() });
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      console.log('Login response:', { data, error }); // Debug log
-
       if (error) {
-        toast.error(error.message);
         console.error('Login error:', error);
+        toast.error(error.message);
         return;
       }
 
       if (data?.session) {
-        console.log('Session obtained, redirecting...'); // Debug log
+        console.log('Session established');
+        
+        // Get return URL or default to /u
+        const returnTo = searchParams.get('returnTo') || '/u';
+        
         toast.success('Logged in successfully');
-        router.push('/u');
+        router.push(returnTo);
         router.refresh();
       } else {
         console.error('No session in response');
         toast.error('Failed to log in');
       }
     } catch (error: any) {
-      console.error('Login catch block:', error);
+      console.error('Login error:', error);
       toast.error(error.message || 'An error occurred');
     } finally {
       setIsLoading(false);

@@ -7,58 +7,58 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res });
   const pathname = req.nextUrl.pathname;
 
-  console.log('Middleware processing path:', pathname); // Debug log
+  console.log('Middleware processing:', {
+    path: pathname,
+    timestamp: new Date().toISOString()
+  });
 
   try {
     // Refresh session if needed
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    console.log('Middleware session check:', {
-      path: pathname,
+    console.log('Session check:', {
       hasSession: !!session,
-      error: sessionError
+      path: pathname,
+      error: sessionError?.message
     });
 
-    if (sessionError) {
-      console.error('Session error in middleware:', sessionError);
-    }
-
-    // Protected routes check
+    // Handle protected routes (/u/*)
     if (pathname.startsWith('/u')) {
       if (!session) {
-        console.log('No session, redirecting to login from:', pathname);
-        const redirectUrl = req.nextUrl.clone();
-        redirectUrl.pathname = '/login';
-        redirectUrl.searchParams.set('from', pathname);
+        console.log('No session, redirecting to login');
+        const redirectUrl = new URL('/login', req.url);
+        redirectUrl.searchParams.set('returnTo', pathname);
         return NextResponse.redirect(redirectUrl);
       }
-      console.log('Session exists, allowing access to:', pathname);
+      // If we have a session, allow access to /u routes
+      console.log('Session valid, allowing access to:', pathname);
+      return res;
     }
 
-    // Auth pages check (login, signup, reset)
-    if (session && ['/login', '/signup', '/reset'].includes(pathname)) {
-      console.log('Session exists, redirecting to /u from auth page:', pathname);
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/u';
-      return NextResponse.redirect(redirectUrl);
+    // Handle auth pages (login, signup, reset)
+    if (['/login', '/signup', '/reset'].includes(pathname)) {
+      if (session) {
+        console.log('Session exists on auth page, redirecting to /u');
+        return NextResponse.redirect(new URL('/u', req.url));
+      }
+      // If no session, allow access to auth pages
+      console.log('No session, allowing access to auth page:', pathname);
+      return res;
     }
 
-    // Update response headers to set cookie
-    const response = NextResponse.next({
-      request: {
-        headers: req.headers,
-      },
-    });
-
-    return response;
+    // For all other routes, just continue
+    return res;
   } catch (error) {
-    console.error('Middleware error:', error);
+    console.error('Middleware error:', {
+      error: error.message,
+      path: pathname
+    });
     
-    // If there's an error and trying to access protected route, redirect to login
+    // On error accessing protected route, redirect to login
     if (pathname.startsWith('/u')) {
-      console.log('Error occurred, redirecting to login from:', pathname);
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/login';
+      console.log('Error occurred, redirecting to login');
+      const redirectUrl = new URL('/login', req.url);
+      redirectUrl.searchParams.set('error', 'session_error');
       return NextResponse.redirect(redirectUrl);
     }
     return res;

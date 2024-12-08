@@ -8,9 +8,10 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next') || '/u';
 
-  console.log('Auth callback received:', { 
-    code: code ? 'present' : 'missing',
-    next 
+  console.log('Auth callback:', { 
+    hasCode: !!code,
+    next,
+    timestamp: new Date().toISOString()
   });
 
   if (code) {
@@ -21,9 +22,10 @@ export async function GET(request: NextRequest) {
       // Exchange the code for a session
       const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
       
-      console.log('Code exchange result:', { 
+      console.log('Code exchange:', { 
         hasSession: !!session,
-        error: error?.message 
+        error: error?.message,
+        timestamp: new Date().toISOString()
       });
 
       if (error) {
@@ -34,8 +36,35 @@ export async function GET(request: NextRequest) {
       }
 
       if (session) {
-        console.log('Session established, redirecting to:', next);
-        return NextResponse.redirect(new URL(next, request.url));
+        // Create a response that redirects to the next page
+        const response = NextResponse.redirect(new URL(next, request.url));
+
+        // Set cookie expiry to match session expiry
+        const sessionExpiry = new Date(session.expires_at * 1000);
+        
+        // Set secure cookie flags
+        response.cookies.set('sb-access-token', session.access_token, {
+          path: '/',
+          expires: sessionExpiry,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+
+        response.cookies.set('sb-refresh-token', session.refresh_token, {
+          path: '/',
+          expires: sessionExpiry,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+
+        console.log('Redirecting with session:', {
+          next,
+          expiresAt: sessionExpiry.toISOString()
+        });
+
+        return response;
       }
     } catch (error) {
       console.error('Auth callback error:', error);
@@ -45,7 +74,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If we get here, something went wrong
   console.log('No code present, redirecting to login');
   return NextResponse.redirect(
     new URL('/login?error=No%20code%20provided', request.url)
