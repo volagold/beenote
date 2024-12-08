@@ -1,7 +1,7 @@
-"use client";
+'use client';
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getClient } from "@/lib/supabase-client";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import toast from "react-hot-toast";
 import LangIcon from "@utils/LangIcon";
 
@@ -61,7 +61,7 @@ export default function CreateLanguage({ created }: { created: string[] }) {
   const new_list = languages.filter((item) => !created.includes(item));
   const [lang, setLang] = useState("");
   const router = useRouter();
-  const supabase = getClient();
+  const supabase = createClientComponentClient();
 
   const handleClick = (item: string) => {
     setLang(item);
@@ -74,15 +74,19 @@ export default function CreateLanguage({ created }: { created: string[] }) {
     }
 
     try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) {
+        router.push('/login');
+        return;
+      }
 
       // Create language
       const { error: insertError } = await supabase
         .from('language')
         .insert({
-          user_id: user.id,
+          user_id: session.user.id,
           lang: lang,
           name: capitalize(lang)
         });
@@ -93,6 +97,9 @@ export default function CreateLanguage({ created }: { created: string[] }) {
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || "Failed to create language");
+      if (error.message?.includes('auth')) {
+        router.push('/login');
+      }
     }
   };
 
