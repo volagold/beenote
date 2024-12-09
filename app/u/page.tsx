@@ -1,22 +1,21 @@
+import { headers } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Metadata } from 'next';
 import CreateLanguage from './CreateLang';
 import ProfileDrop from '@utils/ProfileDrop';
 import Block from '@utils/Block';
 import LangIcon from '@utils/LangIcon';
 
 export const dynamic = 'force-dynamic';
-
-export function generateMetadata(): Metadata {
-  return {
-    title: 'BeeNote - Your Notebooks',
-    description: 'Your language learning notebooks'
-  };
-}
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 export default async function Home() {
+  if (headers().get('x-prerender-revalidate')) {
+    return null;
+  }
+
   const cookieStore = cookies();
   const supabase = createServerComponentClient({ cookies: () => cookieStore });
 
