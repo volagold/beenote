@@ -8,6 +8,7 @@ import Block from '@utils/Block';
 import LangIcon from '@utils/LangIcon';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
