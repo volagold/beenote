@@ -1,46 +1,39 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
 import CreateLanguage from './CreateLang';
 import ProfileDrop from '@utils/ProfileDrop';
 import Block from '@utils/Block';
 import LangIcon from '@utils/LangIcon';
+
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'BeeNote - Your Notebooks',
+    description: 'Your language learning notebooks',
+  };
+}
 
 export default async function Home() {
   const cookieStore = cookies();
   const supabase = createServerComponentClient({ cookies: () => cookieStore });
 
   try {
-    // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('U page session check:', { hasSession: !!session, error: sessionError });
-
-    if (sessionError) {
-      console.error('Session error:', sessionError);
-      throw sessionError;
-    }
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
-      console.log('No session in /u page, redirecting to login');
       redirect('/login');
     }
 
-    // Get languages for the current user
     const { data: languages, error: langError } = await supabase
       .from('language')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: true });
 
-    console.log('Languages query:', { 
-      userId: session.user.id,
-      hasLanguages: !!languages,
-      languageCount: languages?.length,
-      error: langError 
-    });
-
     if (langError) {
-      console.error('Language query error:', langError);
       throw langError;
     }
 
@@ -65,7 +58,6 @@ export default async function Home() {
                   </Block>
                 </div>
               ))}
-
               <CreateLanguage created={langlist}/>
             </div>
           </div>
@@ -73,7 +65,6 @@ export default async function Home() {
       </>
     );
   } catch (error) {
-    console.error('Error in /u page:', error);
     redirect('/login');
   }
 }
