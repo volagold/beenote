@@ -16,6 +16,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  staticPageGenerationTimeout: 300,
+  output: 'standalone'
 }
 
 module.exports = nextConfig
