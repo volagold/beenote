@@ -11,8 +11,8 @@ export default function LogIn() {
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Check for error parameter
   useEffect(() => {
     const error = searchParams.get('error');
     if (error) {
@@ -23,40 +23,46 @@ export default function LogIn() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
+    setError('');
     
     try {
       const formData = new FormData(event.currentTarget);
       const email = formData.get('email')?.toString() || '';
       const password = formData.get('password')?.toString() || '';
 
-      console.log('Login attempt:', { email, timestamp: new Date().toISOString() });
+      if (!email || !password) {
+        setError('Please enter both email and password');
+        toast.error('Please enter both email and password');
+        return;
+      }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) {
-        console.error('Login error:', error);
-        toast.error(error.message);
+      if (signInError) {
+        console.error('Login error:', signInError);
+        setError(signInError.message);
+        toast.error(signInError.message);
         return;
       }
 
       if (data?.session) {
-        console.log('Session established');
-        
         // Get return URL or default to /u
         const returnTo = searchParams.get('returnTo') || '/u';
-        
         toast.success('Logged in successfully');
-        router.push(returnTo);
+        
+        // Ensure we wait for the router operations
+        await router.replace(returnTo);
         router.refresh();
       } else {
-        console.error('No session in response');
+        setError('Login failed - no session created');
         toast.error('Failed to log in');
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      setError(error.message || 'An error occurred');
       toast.error(error.message || 'An error occurred');
     } finally {
       setIsLoading(false);
@@ -75,6 +81,12 @@ export default function LogIn() {
 
       <div className="flex justify-center mt-10"> 
         <form onSubmit={handleSubmit} className="w-full max-w-xs">
+          {error && (
+            <div className="alert alert-error mb-4">
+              <span>{error}</span>
+            </div>
+          )}
+          
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text">Email</span>
